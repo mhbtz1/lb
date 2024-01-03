@@ -1,0 +1,15 @@
+---
+
+Server1 :
+  Port: 8008
+  Address: localhost
+
+Server2 : 
+  Port: 5000
+  Address: localhost
+
+LoadBalancer : 
+  Port: 8080
+  Address: localhost
+
+
