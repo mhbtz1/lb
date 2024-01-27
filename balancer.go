@@ -61,7 +61,8 @@ Use concurrent queue for potentially paarallel requests made to one load balance
 that cannot be serviced immediately
 */
 func loadHandler( w http.ResponseWriter, r *http.Request ){
-
+	
+	mtx.Lock()
 	val := r.Header.Get("ignore-request")
 	if val == "" {
 		conc.Enqueue(r)
@@ -70,17 +71,15 @@ func loadHandler( w http.ResponseWriter, r *http.Request ){
 	fn := func ( w http.ResponseWriter, r *http.Request, q *concqueue.ConcurrentQueue) {
 		var req *http.Request
 
-		mtx.Lock()
 		
 		server_ports := []int{config.Server1.Port, config.Server2.Port}
 		fmt.Printf("Current queue length: %d\n", q.CheckSize() )
 		
-		if ( q.CheckSize() > 0){
-			req = q.Dequeue()
-		} else {
-			req = r
+		if (q.CheckSize() == 0){
+			return;
 		}
-
+		req = q.Dequeue()
+		
 		port := balance(server_ports)
 		newRequest, destinationURI := handleRequest(fmt.Sprintf("http://127.0.0.1:%d", port), w, req);
 		
@@ -90,10 +89,10 @@ func loadHandler( w http.ResponseWriter, r *http.Request ){
 		}
 		fmt.Println("------------------------------------------------------------------")
 		
-		mtx.Unlock()
 	}
 
 	fn(w, r, conc)
+	mtx.Unlock()
 }
 
 
